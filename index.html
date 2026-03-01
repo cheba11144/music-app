@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>My Music</title>
 
 <style>
@@ -519,23 +519,39 @@ function renderPlaylist(filter = "") {
 }
 
 function playTrack(index){
-currentIndex=index;
-audio.src=tracks[index].file;
-audio.play();
-pauseBtn.textContent="⏸";
-currentTrackText.innerText=tracks[index].name;
+    currentIndex = index;
+    audio.src = tracks[index].file;
+    audio.play();
+    pauseBtn.textContent = "⏸";
+
+    const fullName = tracks[index].name;
+
+    let artist = "";
+    let title = fullName;
+
+    if(fullName.includes(" - ")){
+        const parts = fullName.split(" - ");
+        artist = parts[0];
+        title = parts.slice(1).join(" - ");
+    }
+
+    currentTrackText.innerHTML = `
+        <div style="font-weight:600;">${title}</div>
+        <div style="font-size:12px;opacity:.6;margin-top:4px;">${artist}</div>
+    `;
 
     // ✅ Media Session
     if ('mediaSession' in navigator) {
 
         navigator.mediaSession.metadata = new MediaMetadata({
-            title: tracks[index].name,
-            artist: "My Music",
-            album: "Playlist"
+            title: title,
+            artist: artist,
+            album: "My Music"
         });
 
         navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
         navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+
         navigator.mediaSession.setActionHandler('play', () => {
             audio.play();
             pauseBtn.textContent = "⏸";
