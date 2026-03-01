@@ -494,19 +494,28 @@ const volumeSlider=document.getElementById("volumeSlider");
 const volumeBtn=document.getElementById("volumeBtn");
 const currentTrackText=document.getElementById("currentTrack");
 
-function renderPlaylist(filter=""){
-playlist.innerHTML="";
+function renderPlaylist(filter = "") {
+    playlist.innerHTML = "";
 
-tracks
-.filter(track=>track.name.toLowerCase().includes(filter.toLowerCase()))
-.forEach((track,index)=>{
-let div=document.createElement("div");
-div.className="track";
-div.innerText=track.name;
-div.onclick=()=>playTrack(index);
-if(index===currentIndex)div.classList.add("active");
-playlist.appendChild(div);
-});
+    const filteredTracks = tracks.filter(track =>
+        track.name.toLowerCase().includes(filter.toLowerCase())
+    );
+
+    filteredTracks.forEach(track => {
+
+        const realIndex = tracks.indexOf(track);
+
+        let div = document.createElement("div");
+        div.className = "track";
+        div.innerText = track.name;
+
+        div.onclick = () => playTrack(realIndex);
+
+        if (realIndex === currentIndex)
+            div.classList.add("active");
+
+        playlist.appendChild(div);
+    });
 }
 
 function playTrack(index){
@@ -515,7 +524,30 @@ audio.src=tracks[index].file;
 audio.play();
 pauseBtn.textContent="⏸";
 currentTrackText.innerText=tracks[index].name;
-renderPlaylist(searchInput.value);
+
+    // ✅ Media Session
+    if ('mediaSession' in navigator) {
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: tracks[index].name,
+            artist: "My Music",
+            album: "Playlist"
+        });
+
+        navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+        navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+        navigator.mediaSession.setActionHandler('play', () => {
+            audio.play();
+            pauseBtn.textContent = "⏸";
+        });
+
+        navigator.mediaSession.setActionHandler('pause', () => {
+            audio.pause();
+            pauseBtn.textContent = "▶";
+        });
+    }
+
+    renderPlaylist(searchInput.value);
 }
 
 pauseBtn.addEventListener("click",()=>{
