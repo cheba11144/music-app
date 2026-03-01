@@ -176,7 +176,12 @@ button:hover{
 </head>
 <body>
 
-<div class="header">🎵 My Music</div>
+<div class="header">
+    🎵 My Music
+    <button id="addBtn" style="margin-left:10px;font-size:16px;">➕</button>
+</div>
+
+<input type="file" id="fileInput" accept="audio/mp3" multiple style="display:none;">
 
 <div class="search">
 <input type="text" id="searchInput" placeholder="Поиск трека...">
@@ -634,6 +639,80 @@ return minutes+":"+(seconds<10?"0":"")+seconds;
 }
 
 renderPlaylist();
+
+
+const addBtn = document.getElementById("addBtn");
+const fileInput = document.getElementById("fileInput");
+
+addBtn.addEventListener("click", () => {
+    fileInput.click();
+});
+
+fileInput.addEventListener("change", (e) => {
+
+    const files = Array.from(e.target.files);
+
+    files.forEach(file => {
+
+        if (!file.type.includes("audio")) return;
+
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+
+            const fullName = file.name.replace(".mp3", "");
+
+            const newTrack = {
+                name: fullName,
+                file: event.target.result // base64
+            };
+
+            tracks.push(newTrack);
+            saveTrackToDB(newTrack);
+            renderPlaylist(searchInput.value);
+        };
+
+        reader.readAsDataURL(file);
+    });
+
+});
+
+// ==========================
+// DATABASE
+// ==========================
+
+let db;
+
+const request = indexedDB.open("MusicDB", 1);
+
+request.onupgradeneeded = function(e) {
+    db = e.target.result;
+    db.createObjectStore("tracks", { keyPath: "id", autoIncrement: true });
+};
+
+request.onsuccess = function(e) {
+    db = e.target.result;
+    loadSavedTracks();
+};
+
+function saveTrackToDB(track) {
+    const transaction = db.transaction(["tracks"], "readwrite");
+    const store = transaction.objectStore("tracks");
+    store.add(track);
+}
+
+function loadSavedTracks() {
+    const transaction = db.transaction(["tracks"], "readonly");
+    const store = transaction.objectStore("tracks");
+    const request = store.getAll();
+
+    request.onsuccess = function() {
+        request.result.forEach(track => {
+            tracks.push(track);
+        });
+        renderPlaylist();
+    };
+}
 
 </script>
 
