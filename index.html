@@ -419,8 +419,25 @@ const rawTracks = [
 ];
 
 function getMainArtist(fullName) {
-  const base = fullName.split(' - ')[0].trim();
-  return base.split(/\s*(?:feat\.?|ft\.?|&|x|,|\/|;|при\s?уч\.?)\s*/i)[0].trim() || 'Неизвестный';
+  if (!fullName) return 'Неизвестный';
+  
+  // ✅ Нормализуем тире: заменяем все виды тире на обычный дефис
+  const normalized = fullName
+    .replace(/[–—−]/g, '-') // длинное тире, em-dash, minus
+    .trim();
+  
+  // ✅ Берём часть до первого " - " (артист)
+  const parts = normalized.split(' - ');
+  if (parts.length < 2) return 'Неизвестный';
+  
+  const rawArtist = parts[0].trim();
+  
+  // ✅ Обрезаем фичи, коллабы и т.д.
+  const cleanArtist = rawArtist
+    .split(/\s*(?:feat\.?|ft\.?|&|x|,|\/|;|при\s?уч\.?|vs\.?|versus)\s*/i)[0]
+    .trim();
+  
+  return cleanArtist || 'Неизвестный';
 }
 
 let tracks = rawTracks.map((t, i) => ({
@@ -491,6 +508,29 @@ function fixBrokenTracks() {
 }
 // Раскомментируй один раз, затем закомментируй обратно
  fixBrokenTracks();
+ 
+ function fixBrokenArtists() {
+  if(!db) return;
+  const tx = db.transaction(['tracks'], 'readwrite');
+  const store = tx.objectStore('tracks');
+  const req = store.getAll();
+  req.onsuccess = () => {
+    let fixed = 0;
+    req.result.forEach(track => {
+      const newArtist = getMainArtist(track.name);
+      // ✅ Если артист совпадает с полным именем или содержит " - " — чиним
+      if (track.artist === track.name || track.artist.includes(' - ')) {
+        track.artist = newArtist;
+        store.put(track);
+        fixed++;
+      }
+    });
+    console.log(`✅ Починено артистов: ${fixed}`);
+    window.render();
+  };
+}
+// ✅ Раскомментируй один раз, затем закомментируй обратно
+ fixBrokenArtists();
 
 // ================= GLOBAL FUNCTIONS (для onclick) =================
 window.setView = (v) => { state.view = v; state.artist = state.playlist = null; window.render(); };
@@ -673,12 +713,17 @@ async function handleFiles(e) {
     const reader=new FileReader();
     reader.onload=async ev=>{
       const n=file.name.replace(/\.[^/.]+$/,'');
+      
+      // ✅ Используем улучшенную функцию
+      const artist = getMainArtist(n);
+      const title = n.includes(' - ') ? n.split(' - ').slice(1).join(' - ').trim() : n;
+      
       const tr={
         id:'local_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
         name:n,
         file:ev.target.result,
-        artist: getMainArtist(n), // ✅ Обязательно
-        title: n.includes(' - ') ? n.split(' - ').slice(1).join(' - ').trim() : n, // ✅ Обязательно
+        artist: artist, // ✅ Теперь правильно
+        title: title,   // ✅ Теперь правильно
         duration: null,
         isLocal: true
       };
