@@ -58,9 +58,10 @@ body{font-family:var(--font);background:linear-gradient(135deg,var(--bg-sec),var
 .tr-item.active{background:rgba(122,92,255,.15);border-left:3px solid var(--acc)}
 .tr-btn{width:34px;height:34px;border-radius:50%;background:var(--acc);border:none;color:#fff;font-size:13px;cursor:pointer;display:grid;place-items:center;transition:.2s;flex-shrink:0}
 .tr-btn:hover{background:var(--acc-h);transform:scale(1.05)}
-.tr-info{flex:1;min-width:0}
+.tr-info{flex:1;min-width:0; cursor: pointer;}
 .tr-t{font-weight:500;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tr-a{font-size:13px;color:var(--muted);margin-top:2px}
+.tr-a{font-size:13px;color:var(--muted);margin-top:2px; transition: color 0.2s;}
+.tr-a:hover { color: var(--acc); text-decoration: underline; }
 .tr-dur{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:42px;text-align:right}
 .tr-act{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:6px;transition:.2s}
 .tr-act:hover{color:#ff5c5c}
@@ -70,11 +71,11 @@ body{font-family:var(--font);background:linear-gradient(135deg,var(--bg-sec),var
 .p-art{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--acc),#5e45b8);display:grid;place-items:center;font-size:18px;flex-shrink:0}
 .p-info{flex:1;min-width:0}
 .p-t{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.p-a{font-size:12px;color:var(--muted);margin-top:1px}
+.p-a{font-size:12px;color:var(--muted);margin-top:1px; transition: color 0.2s; cursor: pointer;}
+.p-a:hover { color: var(--acc); text-decoration: underline; }
 .p-cont{width:100%;height:4px;background:rgba(122,92,255,.2);border-radius:2px;cursor:pointer;margin-bottom:8px}
 .p-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--acc),#9b7fff);border-radius:2px;transition:width .1s linear}
 .p-time{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:10px;font-variant-numeric:tabular-nums}
-
 .ctrls{display:flex;align-items:center;justify-content:center;gap:18px}
 .c-btn{background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;transition:.2s;padding:6px}
 .c-btn:hover{color:var(--acc);transform:scale(1.1)}
@@ -117,9 +118,11 @@ body{font-family:var(--font);background:linear-gradient(135deg,var(--bg-sec),var
 <input type="file" id="fileInput" accept="audio/*,audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/aac,.mp3,.wav,.ogg,.m4a,.flac" multiple style="display:none">
 
 <div class="tabs">
-  <button class="tab active" data-view="tracks" onclick="window.setView('tracks')">🎧 Треки</button>
-  <button class="tab" data-view="artists" onclick="window.setView('artists')">👤 Артисты</button>
-  <button class="tab" data-view="playlists" onclick="window.setView('playlists')">📋 Плейлисты</button>
+  <button class="tab active" data-view="tracks">🎧 Треки</button>
+  <button class="tab" data-view="artists">👤 Артисты</button>
+  <button class="tab" data-view="playlists">📋 Плейлисты</button>
+  <button class="tab" data-view="recent">🕐 Недавние</button>
+  <button class="tab" data-view="stats">📊 Статистика</button>
 </div>
 
 <div class="search">
@@ -131,14 +134,17 @@ body{font-family:var(--font);background:linear-gradient(135deg,var(--bg-sec),var
 <div class="player">
   <div class="p-track" id="pClick">
     <div class="p-art">🎵</div>
-    <div class="p-info"><div class="p-t" id="pTitle">Ничего не играет</div><div class="p-a" id="pArtist"></div></div>
+    <div class="p-info">
+        <div class="p-t" id="pTitle">Ничего не играет</div>
+        <div class="p-a" id="pArtist" onclick="event.stopPropagation(); if(state.queue[state.qIdx]) window.goToArtist(state.queue[state.qIdx].artist)">...</div>
+    </div>
   </div>
   <div class="p-cont" id="progCont"><div class="p-bar" id="prog"></div></div>
   <div class="p-time"><span id="cTime">0:00</span><span id="dTime">0:00</span></div>
   <div class="ctrls">
     <div class="vol-wrap">
       <button class="c-btn" id="volBtn">🔊</button>
-      <div class="vol-slider"><input type="range" id="volSlider" min="0" max="1" step="0.01" value="1"></div>
+      <div class="vol-slider"><input type="range" id="volSlider" min="0" max="1" step="0.01" value="0.2"></div>
     </div>
     <button class="c-btn" id="prevBtn">⏮</button>
     <button class="c-btn main" id="playBtn">▶</button>
@@ -149,7 +155,6 @@ body{font-family:var(--font);background:linear-gradient(135deg,var(--bg-sec),var
 
 <audio id="audio"></audio>
 
-<!-- Модалки -->
 <div class="modal" id="plModal">
   <div class="m-box">
     <div class="m-t">Новый плейлист</div>
@@ -171,7 +176,6 @@ body{font-family:var(--font);background:linear-gradient(135deg,var(--bg-sec),var
   </div>
 </div>
 
-<!-- ✅ НОВАЯ МОДАЛКА РЕДАКТИРОВАНИЯ -->
 <div class="modal" id="editModal">
   <div class="m-box">
     <div class="m-t">Редактировать трек</div>
@@ -191,6 +195,33 @@ const $$ = s => document.querySelectorAll(s);
 const cont = $('#content');
 const audio = $('#audio');
 const state = { view: 'tracks', artist: null, playlist: null, qIdx: -1, queue: [], shuf: false, search: '' };
+
+// ================= АНАЛИТИКА & ИСТОРИЯ =================
+function getAnalytics() {
+  try { return JSON.parse(localStorage.getItem('myMusic_analytics')) || { history: [], monthPlays: {}, artistPlays: {} }; }
+  catch(e) { return { history: [], monthPlays: {}, artistPlays: {} }; }
+}
+function saveAnalytics(data) { localStorage.setItem('myMusic_analytics', JSON.stringify(data)); }
+
+function recordPlay(track) {
+  const data = getAnalytics();
+  const now = Date.now();
+  const currentMonth = new Date().toISOString().slice(0, 7);
+
+  // 1. История (макс 25, без дублей)
+  data.history = data.history.filter(h => String(h.id) !== String(track.id));
+  data.history.unshift({ id: track.id, ts: now });
+  if (data.history.length > 25) data.history = data.history.slice(0, 25);
+
+  // 2. Прослушивания за месяц
+  data.monthPlays[currentMonth] = (data.monthPlays[currentMonth] || 0) + 1;
+
+  // 3. Прослушивания по артистам
+  if (track.artist && track.artist !== 'Неизвестный') {
+    data.artistPlays[track.artist] = (data.artistPlays[track.artist] || 0) + 1;
+  }
+  saveAnalytics(data);
+}
 
 // ================= ДАННЫЕ =================
 const rawTracks = [
@@ -429,7 +460,6 @@ const rawTracks = [
   {name: "YUNGWAY - Изобилие", file: "tracks/YUNGWAY_feat._OG_Buda_-_Izobilie_feat._OG_Buda.mp3"}
 ];
 
-// Универсальный парсер имени файла
 function parseTrackName(fullName) {
   if (!fullName) return { artist: 'Неизвестный', title: 'Неизвестный' };
   let s = fullName.replace(/\.[^/.]+$/, '').replace(/[\s\u00A0]+/g, ' ').trim();
@@ -477,20 +507,14 @@ async function loadTracksFromDB() {
   return new Promise(res => {
     const r = db.transaction(['tracks'], 'readonly').objectStore('tracks').getAll();
     r.onsuccess = () => {
-      const local = r.result.map(t => {
-        const parsed = parseTrackName(t.name);
-        return { ...t, artist: t.artist || parsed.artist, title: t.title || parsed.title, isLocal: true };
-      });
+      const local = r.result.map(t => ({ ...t, artist: t.artist || parseTrackName(t.name).artist, title: t.title || parseTrackName(t.name).title, isLocal: true }));
       tracks = [...tracks.filter(t=>!t.isLocal), ...local];
-      applyTrackOverrides(); // ✅ Применяем правки после загрузки
-      window.render();
-      res();
+      applyTrackOverrides(); window.render(); res();
     };
     r.onerror = () => res();
   });
 }
 
-// ================= ПРАВКИ ТРЕКОВ =================
 function saveTrackOverrides() {
   const overrides = tracks.map(t => ({ id: t.id, artist: t.artist, title: t.title, name: t.name }));
   try { localStorage.setItem('myMusic_overrides', JSON.stringify(overrides)); } catch(e){}
@@ -505,63 +529,83 @@ function applyTrackOverrides() {
   } catch(e){}
 }
 
+// ✅ Загрузка сохранённых длительностей
+function loadDurations() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('myMusic_durations')) || {};
+    tracks.forEach(t => { if (saved[t.id]) t.duration = saved[t.id]; });
+  } catch(e) {}
+}
+
+// ✅ Сохранение длительности после проигрывания
+function saveTrackDuration(id, duration) {
+  try {
+    const saved = JSON.parse(localStorage.getItem('myMusic_durations')) || {};
+    saved[id] = duration;
+    localStorage.setItem('myMusic_durations', JSON.stringify(saved));
+  } catch(e) {}
+}
+
 // ================= GLOBAL FUNCTIONS =================
 window.setView = (v) => { state.view = v; state.artist = state.playlist = null; window.render(); };
 window.back = () => { state.view = 'tracks'; state.artist = state.playlist = null; window.render(); };
 window.closeModals = () => { $$('.modal').forEach(m => m.classList.remove('active')); currentEditId = null; };
 window.openPlaylist = (id) => { state.playlist = id; state.view = 'playlist'; window.render(); };
-window.goToArtist = (a) => { state.artist = a; state.view = 'artist'; window.render(); };
+window.goToArtist = (a) => { if(!a) return; state.artist = a; state.view = 'artist'; window.render(); };
 
 window.createPL = () => {
   const n = $('#plInput').value.trim(); if(!n) return;
   const p = {id:Date.now(), name:n, trackIds:[]};
   playlists.push(p); savePL(); window.closeModals();
-  state.playlist = p.id; state.view = 'playlist'; window.render();
-  $('#plInput').value = '';
+  state.playlist = p.id; state.view = 'playlist'; window.render(); $('#plInput').value = '';
 };
 window.removeTr = (id) => {
   const p = playlists.find(x=>x.id===state.playlist); if(!p) return;
   p.trackIds = p.trackIds.filter(x=>x!==id); savePL(); window.render();
 };
+
 window.openTrackPicker = () => {
   if(!state.playlist) return;
   const pl = playlists.find(p=>p.id===state.playlist);
+  
+  // ✅ Используем строгое сравнение строк для надёжности
   $('#pickerList').innerHTML = tracks.map(t => {
-    const added = pl.trackIds.includes(t.id);
-    return `<div class="tr-item ${added?'active':''}" onclick="window.toggleTrack('${t.id}')" style="cursor:pointer">
+    // ✅ Проверяем наличие через строгое сравнение
+    const added = pl.trackIds.some(id => String(id) === String(t.id));
+    return `<div class="tr-item ${added?'active':''}" data-pickid="${t.id}" onclick="window.toggleTrack('${t.id}')" style="cursor:pointer">
       <div class="tr-info"><div class="tr-t">${t.title}</div><div class="tr-a">${t.artist}</div></div>
       ${added?'<span style="color:var(--acc)">✓</span>':''}
     </div>`;
   }).join('');
   $('#pickerModal').classList.add('active');
 };
+
 window.toggleTrack = (tid) => {
   const pl = playlists.find(p=>p.id===state.playlist); if(!pl) return;
-  const idx = pl.trackIds.indexOf(tid);
-  idx === -1 ? pl.trackIds.push(tid) : pl.trackIds.splice(idx, 1);
-  savePL(); window.render(); window.openTrackPicker();
+  
+  const tidStr = String(tid);
+  const idx = pl.trackIds.findIndex(id => String(id) === tidStr);
+  
+  if (idx === -1) pl.trackIds.push(tidStr); // ✅ Сохраняем строго как строку
+  else pl.trackIds.splice(idx, 1);
+  
+  savePL(); 
+  window.render();          // ✅ Сразу перерисовывает список треков
+  window.openTrackPicker(); // ✅ Обновляет галочки в модалке
 };
 
 let currentEditId = null;
 window.openEditTrack = (id) => {
-  const t = tracks.find(x => String(x.id) === String(id));
-  if(!t) return;
-  currentEditId = id;
-  $('#editArtist').value = t.artist;
-  $('#editTitle').value = t.title;
-  $('#editModal').classList.add('active');
+  const t = tracks.find(x => String(x.id) === String(id)); if(!t) return;
+  currentEditId = id; $('#editArtist').value = t.artist; $('#editTitle').value = t.title; $('#editModal').classList.add('active');
 };
 window.closeEditModal = () => { $('#editModal').classList.remove('active'); currentEditId = null; };
 window.saveEditTrack = () => {
-  const t = tracks.find(x => String(x.id) === String(currentEditId));
-  if(!t) return;
-  const newArtist = $('#editArtist').value.trim();
-  const newTitle = $('#editTitle').value.trim();
+  const t = tracks.find(x => String(x.id) === String(currentEditId)); if(!t) return;
+  const newArtist = $('#editArtist').value.trim(), newTitle = $('#editTitle').value.trim();
   if(!newArtist || !newTitle) return alert('Заполните оба поля');
   t.artist = newArtist; t.title = newTitle; t.name = `${newArtist} - ${newTitle}`;
-  if(t.isLocal) saveTrackToDB(t);
-  saveTrackOverrides();
-  window.closeEditModal(); window.render();
+  if(t.isLocal) saveTrackToDB(t); saveTrackOverrides(); window.closeEditModal(); window.render();
 };
 
 window.playById = (id, queue) => {
@@ -569,7 +613,13 @@ window.playById = (id, queue) => {
   state.queue = queue || (state.playlist ? playlists.find(p=>p.id===state.playlist).trackIds.map(i=>tracks.find(x=>String(x.id)===String(i))).filter(Boolean) : state.artist ? tracks.filter(x=>String(x.artist)===String(state.artist)) : [...tracks]);
   state.qIdx = state.queue.findIndex(x => String(x.id) === String(id)); window.load(t);
 };
-window.playPL = (id) => { const p=playlists.find(x=>x.id===id); if(p?.trackIds.length) window.playById(p.trackIds[0], p.trackIds.map(i=>tracks.find(x=>x.id===i)).filter(Boolean)); };
+window.playPL = (id) => { 
+  const p=playlists.find(x=>x.id===id); 
+  if(p?.trackIds.length) window.playById(
+    p.trackIds[0], 
+    p.trackIds.map(pid => tracks.find(t => String(t.id) === String(pid))).filter(Boolean)
+  ); 
+};
 window.playArt = (n) => { const q=tracks.filter(x=>x.artist===n); if(q.length) window.playById(q[0].id, q); };
 window.togglePlay = () => { audio.paused?audio.play().catch(()=>{}):audio.pause(); $('#playBtn').textContent=audio.paused?'▶':'⏸'; };
 window.prev = () => { if(!state.queue.length)return; if(audio.currentTime>3) audio.currentTime=0; else { state.qIdx=(state.qIdx-1+state.queue.length)%state.queue.length; if(state.queue[state.qIdx]) window.load(state.queue[state.qIdx]); } };
@@ -578,6 +628,7 @@ window.seek = (e) => { if(!audio.duration)return; audio.currentTime=((e.clientX-
 window.load = (t) => {
   audio.src = t.file; audio.play().catch(()=>{}); $('#playBtn').textContent = '⏸';
   $('#pTitle').textContent = t.title; $('#pArtist').textContent = t.artist;
+  recordPlay(t); // ✅ Запись в историю и статистику
   if ('mediaSession' in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist, album: "My Music" });
     navigator.mediaSession.setActionHandler('previoustrack', () => window.prev());
@@ -607,12 +658,35 @@ window.render = () => {
     const list = state.search?arts.filter(a=>a.toLowerCase().includes(state.search)):arts;
     html = `<div class="sec"><div class="sec-h"><div class="sec-t">Артисты</div><span style="color:var(--muted)">${list.length}</span></div>
     <div class="grid grid-art">${list.length?list.map(a=>`<div class="card" onclick="window.goToArtist('${a.replace(/'/g,"\\'")}')"><div class="art-av">${a[0]}</div><div class="art-n">${a}</div><div class="art-c">${tracks.filter(x=>x.artist===a).length} трек${'ов'.slice(-2)}</div></div>`).join(''):'<div class="empty">Нет артистов</div>'}</div></div>`;
+  } else if (state.view==='recent') {
+    const analytics = getAnalytics();
+    const validHistory = analytics.history.map(h => tracks.find(t => String(t.id) === String(h.id))).filter(Boolean);
+    html = `<div class="sec"><div class="sec-h"><div class="sec-t">🕐 Недавние</div><span style="color:var(--muted)">${validHistory.length} треков</span></div>
+    <div class="tr-list">${validHistory.length?validHistory.map(t=>rTr(t,false)).join(''):'<div class="empty">История пуста</div>'}</div></div>`;
+  } else if (state.view==='stats') {
+    const analytics = getAnalytics();
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const totalThisMonth = analytics.monthPlays[currentMonth] || 0;
+    const topArtists = Object.entries(analytics.artistPlays).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    html = `<div class="sec">
+      <div class="sec-h"><div class="sec-t">📊 Статистика</div></div>
+      <div style="background:var(--bg-card);padding:16px;border-radius:12px;margin-bottom:16px;text-align:center;">
+        <div style="font-size:14px;color:var(--muted)">Прослушано за ${currentMonth}</div>
+        <div style="font-size:32px;font-weight:700">${totalThisMonth}</div>
+      </div>
+      <div class="sec-t" style="margin-bottom:12px">Топ-5 артистов</div>
+      ${topArtists.length ? topArtists.map((a, i) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-card);border-radius:10px;margin-bottom:8px;">
+          <div style="font-size:20px;font-weight:700;color:var(--acc);width:24px;text-align:center">${i+1}</div>
+          <div style="flex:1"><div style="font-weight:600">${a[0]}</div><div style="font-size:12px;color:var(--muted)">${a[1]} прослушиваний</div></div>
+        </div>`).join('') : '<div class="empty">Статистики пока нет</div>'}
+    </div>`;
   } else if (state.view==='playlists') {
     html = `<div class="sec"><div class="sec-h"><div class="sec-t">Плейлисты</div><button class="sec-btn" onclick="$('#plModal').classList.add('active')">+ Создать</button></div>
     <div class="grid grid-pl">${playlists.length?playlists.map(p=>`<div class="card" onclick="window.openPlaylist(${p.id})"><div class="pl-n">${p.name}</div><div class="pl-c">${p.trackIds.length} трек${'ов'.slice(-2)}</div><div class="pl-acts"><button class="pl-btn" onclick="event.stopPropagation();window.playPL(${p.id})">▶</button><button class="pl-btn" onclick="event.stopPropagation();window.renamePL(${p.id})">✏️</button><button class="pl-btn del" onclick="event.stopPropagation();window.delPL(${p.id})">🗑️</button></div></div>`).join(''):'<div class="empty">Нет плейлистов</div>'}</div></div>`;
   } else if (state.view==='playlist') {
     const pl = playlists.find(p=>p.id===state.playlist); if(!pl) return window.back();
-    const list = pl.trackIds.map(id=>tracks.find(t=>t.id===id)).filter(t=>t&&f(t));
+    const list = pl.trackIds.map(id => tracks.find(t => String(t.id) === String(id))).filter(t => t && f(t));
     html = `<div class="sec-h"><button class="sec-btn" onclick="window.back()">← Назад</button><div style="flex:1;text-align:right"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${pl.name}</div><div style="color:var(--muted)">${list.length} треков</div></div><button class="sec-btn" style="background:var(--acc);color:#fff;padding:8px 16px;border-radius:16px" onclick="window.openTrackPicker()">➕ Добавить</button></div><div class="tr-list">${list.length?list.map(t=>rTr(t,true)).join(''):'<div class="empty">Плейлист пуст</div>'}</div>`;
   } else if (state.view==='artist') {
     const list = tracks.filter(t=>t.artist===state.artist&&f(t));
@@ -623,9 +697,12 @@ window.render = () => {
 
 function rTr(t, showRemove=false) {
   const isAct = curTrack()?.id===t.id;
-  return `<div class="tr-item ${isAct?'active':''}">
+  return `<div class="tr-item ${isAct?'active':''}" data-id="${t.id}">
     <button class="tr-btn" onclick="event.stopPropagation();window.playById('${t.id}')">${isAct&&!audio.paused?'⏸':'▶'}</button>
-    <div class="tr-info" onclick="event.stopPropagation();window.playById('${t.id}')"><div class="tr-t">${t.title}</div><div class="tr-a">${t.artist}</div></div>
+    <div class="tr-info" onclick="event.stopPropagation();window.playById('${t.id}')">
+        <div class="tr-t">${t.title}</div>
+        <div class="tr-a" onclick="event.stopPropagation();window.goToArtist('${t.artist.replace(/'/g,"\\'")}')">${t.artist}</div>
+    </div>
     <div class="tr-dur">${t.duration?fmt(t.duration):'--:--'}</div>
     <button class="tr-act" onclick="event.stopPropagation();window.openEditTrack('${t.id}')" title="Редактировать">⋮</button>
     ${showRemove?`<button class="tr-act" onclick="event.stopPropagation();window.removeTr('${t.id}')">🗑️</button>`:''}
@@ -636,13 +713,16 @@ window.delPL = (id) => { if(confirm('Удалить плейлист?')){playlis
 
 // ================= INIT =================
 document.addEventListener('DOMContentLoaded', () => {
-  applyTrackOverrides(); // ✅ Применяем правки ДО рендера
-  window.render();
+  // Привязка вкладок
+  $$('.tab').forEach(t => t.onclick = () => window.setView(t.dataset.view));
+  audio.volume = 0.2;
+  if ($('#volSlider')) $('#volSlider').value = 0.2;
+  updateVolIcon();
+  loadDurations();
+  applyTrackOverrides(); window.render();
   openDB().then(loadTracksFromDB).catch(console.error);
   
-  $('#playBtn').onclick = window.togglePlay;
-  $('#prevBtn').onclick = window.prev;
-  $('#nextBtn').onclick = window.next;
+  $('#playBtn').onclick = window.togglePlay; $('#prevBtn').onclick = window.prev; $('#nextBtn').onclick = window.next;
   $('#shufBtn').onclick = () => { state.shuf = !state.shuf; $('#shufBtn').classList.toggle('act', state.shuf); };
   $('#progCont').onclick = window.seek;
   $('#pClick').onclick = () => { state.view = state.playlist?'playlist':state.artist?'artist':'tracks'; window.render(); };
@@ -653,11 +733,18 @@ document.addEventListener('DOMContentLoaded', () => {
   updateVolIcon();
   
   audio.addEventListener('timeupdate', () => { if(audio.duration&&isFinite(audio.duration)) { $('#prog').style.width=Math.min((audio.currentTime/audio.duration)*100,100)+'%'; $('#cTime').textContent=fmt(audio.currentTime); } });
-  audio.addEventListener('loadedmetadata', () => { $('#dTime').textContent = fmt(audio.duration); const cur = curTrack(); if(cur && !cur.duration) cur.duration = audio.duration; });
+  audio.addEventListener('loadedmetadata', () => {
+  $('#dTime').textContent = fmt(audio.duration);
+  const cur = curTrack();
+  if (cur && !cur.duration) {
+    cur.duration = audio.duration;
+    saveTrackDuration(cur.id, audio.duration); // ✅ Сохраняем для будущих запусков
+    window.render(); // ✅ Обновляем список, чтобы длительность появилась сразу
+  }
+});
   audio.addEventListener('ended', window.next);
 });
 
-// ================= ФАЙЛЫ =================
 async function handleFiles(e) {
   const f=[...e.target.files].filter(x=>x.type.includes('audio'));
   for(const file of f){
@@ -666,13 +753,9 @@ async function handleFiles(e) {
       const n=file.name.replace(/\.[^/.]+$/,'');
       const parsed = parseTrackName(n);
       const tr={ id:'local_'+Date.now()+'_'+Math.random().toString(36).slice(2,8), name:n, file:ev.target.result, artist:parsed.artist, title:parsed.title, duration:null, isLocal:true };
-      tracks.push(tr);
-      try{await saveTrackToDB(tr);}catch(err){}
-      window.render();
-    };
-    reader.readAsDataURL(file);
-  }
-  e.target.value='';
+      tracks.push(tr); try{await saveTrackToDB(tr);}catch(err){} window.render();
+    }; reader.readAsDataURL(file);
+  } e.target.value='';
 }
 </script>
 </body>
