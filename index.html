@@ -194,7 +194,11 @@ const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const cont = $('#content');
 const audio = $('#audio');
-const state = { view: 'tracks', artist: null, playlist: null, qIdx: -1, queue: [], shuf: false, search: '' };
+const state = { 
+  view: 'tracks', artist: null, playlist: null, qIdx: -1, queue: [], 
+  shuf: false, search: '',
+  historyQueue: [] // ✅ Новая история для кнопки "Назад" при shuffle
+};
 
 // ================= АНАЛИТИКА & ИСТОРИЯ =================
 function getAnalytics() {
@@ -626,13 +630,47 @@ window.playPL = (id) => {
 };
 window.playArt = (n) => { const q=tracks.filter(x=>x.artist===n); if(q.length) window.playById(q[0].id, q); };
 window.togglePlay = () => { audio.paused?audio.play().catch(()=>{}):audio.pause(); $('#playBtn').textContent=audio.paused?'▶':'⏸'; };
-window.prev = () => { if(!state.queue.length)return; if(audio.currentTime>3) audio.currentTime=0; else { state.qIdx=(state.qIdx-1+state.queue.length)%state.queue.length; if(state.queue[state.qIdx]) window.load(state.queue[state.qIdx]); } };
+window.prev = () => { 
+  if(!state.queue.length) return;
+  
+  // ✅ В режиме shuffle: возвращаемся по истории
+  if (state.shuf) {
+    // Если в истории есть хотя бы 1 элемент (текущий)
+    if (state.historyQueue.length > 1) {
+      state.historyQueue.pop(); // убираем текущий
+      const prevId = state.historyQueue[state.historyQueue.length - 1]; // берём предыдущий
+      const t = tracks.find(x => String(x.id) === String(prevId));
+      if (t) {
+        // Восстанавливаем qIdx для корректного отображения
+        state.qIdx = state.queue.findIndex(x => String(x.id) === String(prevId));
+        window.load(t);
+        return;
+      }
+    }
+    // Фоллбэк: если истории нет, просто играем с начала
+    state.qIdx = 0; window.load(state.queue[0]);
+    return;
+  }
+
+  // ✅ В обычном режиме: стандартная логика
+  if(audio.currentTime > 3) {
+    audio.currentTime = 0;
+  } else {
+    state.qIdx = (state.qIdx - 1 + state.queue.length) % state.queue.length;
+    if(state.queue[state.qIdx]) window.load(state.queue[state.qIdx]);
+  }
+};
 window.next = () => { if(!state.queue.length)return; state.qIdx = state.shuf?Math.floor(Math.random()*state.queue.length):(state.qIdx+1)%state.queue.length; if(state.queue[state.qIdx]) window.load(state.queue[state.qIdx]); };
 window.seek = (e) => { if(!audio.duration)return; audio.currentTime=((e.clientX-$('#progCont').getBoundingClientRect().left)/$('#progCont').clientWidth)*audio.duration; };
 window.load = (t) => {
+  // ✅ Если это не первый трек и мы не возвращаемся назад — записываем в историю
+  if (state.qIdx >= 0 && state.historyQueue[state.historyQueue.length - 1] !== String(t.id)) {
+    state.historyQueue.push(String(t.id));
+  }
+  
   audio.src = t.file; audio.play().catch(()=>{}); $('#playBtn').textContent = '⏸';
   $('#pTitle').textContent = t.title; $('#pArtist').textContent = t.artist;
-  recordPlay(t); // ✅ Запись в историю и статистику
+  recordPlay(t);
   if ('mediaSession' in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist, album: "My Music" });
     navigator.mediaSession.setActionHandler('previoustrack', () => window.prev());
