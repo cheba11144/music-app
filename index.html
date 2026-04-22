@@ -205,18 +205,22 @@ function saveAnalytics(data) { localStorage.setItem('myMusic_analytics', JSON.st
 
 function recordPlay(track) {
   const data = getAnalytics();
-  const now = Date.now();
   const currentMonth = new Date().toISOString().slice(0, 7);
 
   // 1. История (макс 25, без дублей)
   data.history = data.history.filter(h => String(h.id) !== String(track.id));
-  data.history.unshift({ id: track.id, ts: now });
+  data.history.unshift({ id: track.id, ts: Date.now() });
   if (data.history.length > 25) data.history = data.history.slice(0, 25);
 
-  // 2. Прослушивания за месяц
+  // 2. Количество треков за месяц
   data.monthPlays[currentMonth] = (data.monthPlays[currentMonth] || 0) + 1;
 
-  // 3. Прослушивания по артистам
+  // 3. ✅ Минуты за месяц (если длительность ещё не загрузилась, берём ~3 мин)
+  const mins = Math.max(1, Math.round((track.duration || 180) / 60));
+  data.monthMinutes = data.monthMinutes || {};
+  data.monthMinutes[currentMonth] = (data.monthMinutes[currentMonth] || 0) + mins;
+
+  // 4. Артисты
   if (track.artist && track.artist !== 'Неизвестный') {
     data.artistPlays[track.artist] = (data.artistPlays[track.artist] || 0) + 1;
   }
@@ -665,14 +669,24 @@ window.render = () => {
     <div class="tr-list">${validHistory.length?validHistory.map(t=>rTr(t,false)).join(''):'<div class="empty">История пуста</div>'}</div></div>`;
   } else if (state.view==='stats') {
     const analytics = getAnalytics();
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const totalThisMonth = analytics.monthPlays[currentMonth] || 0;
+    const currentMonthKey = new Date().toISOString().slice(0, 7);
+    const monthNames = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+    const currentMonthName = monthNames[new Date().getMonth()];
+    
+    const totalTracks = analytics.monthPlays[currentMonthKey] || 0;
+    const totalMins = analytics.monthMinutes?.[currentMonthKey] || 0;
+    const hours = Math.floor(totalMins / 60);
+    const mins = totalMins % 60;
+    const timeStr = hours > 0 ? `${hours}ч ${mins}м` : `${mins} мин`;
+    
     const topArtists = Object.entries(analytics.artistPlays).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    
     html = `<div class="sec">
       <div class="sec-h"><div class="sec-t">📊 Статистика</div></div>
       <div style="background:var(--bg-card);padding:16px;border-radius:12px;margin-bottom:16px;text-align:center;">
-        <div style="font-size:14px;color:var(--muted)">Прослушано за ${currentMonth}</div>
-        <div style="font-size:32px;font-weight:700">${totalThisMonth}</div>
+        <div style="font-size:14px;color:var(--muted)">Прослушано за ${currentMonthName}</div>
+        <div style="font-size:32px;font-weight:700">${totalTracks} треков</div>
+        <div style="font-size:16px;color:var(--acc);margin-top:4px;font-weight:600">${timeStr}</div>
       </div>
       <div class="sec-t" style="margin-bottom:12px">Топ-5 артистов</div>
       ${topArtists.length ? topArtists.map((a, i) => `
