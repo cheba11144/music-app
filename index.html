@@ -200,6 +200,17 @@ body{font-family:var(--font);background:linear-gradient(135deg,var(--bg-sec),var
 .player.mini .vol-wrap .vol-slider { display: none !important; }
 
 @media(max-width:480px){.header{padding:12px 14px}.tabs{padding:8px 12px}.content{padding:8px 12px 200px}}
+
+.shuffle-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--acc); border: none; color: #fff;
+  font-size: 15px; cursor: pointer; transition: .2s;
+  display: grid; place-items: center;
+}
+.shuffle-btn:hover {
+  background: var(--acc-h); transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(122,92,255,.3);
+}
 </style>
 </head>
 <body>
@@ -817,7 +828,7 @@ window.render = () => {
   
   if (state.view==='tracks') {
     const list = tracks.filter(f);
-    html = `<div class="sec"><div class="sec-h"><div class="sec-t">Все треки</div><span style="color:var(--muted)">${list.length}</span></div>
+    html = `<div class="sec"><div class="sec-h"><div class="sec-t">Все треки</div><div style="display:flex;align-items:center;gap:12px"><span style="color:var(--muted)">${list.length}</span><button class="shuffle-btn" onclick="window.shufflePlay()" title="Играть вперемешку">▶</button></div></div>
     <div class="tr-list">${list.length?list.map(t=>rTr(t,false)).join(''):'<div class="empty"><div class="e-ic">🎧</div>Треки не найдены</div>'}</div></div>`;
   } else if (state.view==='artists') {
     const arts = [...new Set(tracks.map(t=>t.artist))].sort();
@@ -976,6 +987,23 @@ cont.addEventListener('scroll', () => {
     player.classList.remove('mini');
   }
 });
+
+window.shufflePlay = () => {
+  // Берем треки с учётом текущего поиска
+  const pool = tracks.filter(t => t.name.toLowerCase().includes(state.search) || t.artist.toLowerCase().includes(state.search));
+  if (!pool.length) return;
+  
+  const rand = pool[Math.floor(Math.random() * pool.length)];
+  
+  // Включаем микс
+  state.shuf = true;
+  if ($('#shufBtn')) $('#shufBtn').classList.add('act');
+  
+  // Ставим очередь и запускаем
+  state.queue = [...tracks];
+  state.qIdx = state.queue.findIndex(x => x.id === rand.id);
+  window.load(rand);
+};
 </script>
 </body>
 </html>
