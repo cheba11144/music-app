@@ -202,15 +202,13 @@ body{font-family:var(--font);background:linear-gradient(135deg,var(--bg-sec),var
 @media(max-width:480px){.header{padding:12px 14px}.tabs{padding:8px 12px}.content{padding:8px 12px 200px}}
 
 .shuffle-btn {
-  width: 38px; height: 38px; border-radius: 50%;
+  width: 26px; height: 26px; border-radius: 50%;
   background: var(--acc); border: none; color: #fff;
-  font-size: 15px; cursor: pointer; transition: .2s;
+  font-size: 10px; cursor: pointer; transition: .2s;
   display: grid; place-items: center;
+  margin-left: 10px;
 }
-.shuffle-btn:hover {
-  background: var(--acc-h); transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(122,92,255,.3);
-}
+.shuffle-btn:hover { background: var(--acc-h); transform: scale(1.15); }
 </style>
 </head>
 <body>
@@ -828,7 +826,7 @@ window.render = () => {
   
   if (state.view==='tracks') {
     const list = tracks.filter(f);
-    html = `<div class="sec"><div class="sec-h"><div class="sec-t">Все треки</div><div style="display:flex;align-items:center;gap:12px"><span style="color:var(--muted)">${list.length}</span><button class="shuffle-btn" onclick="window.shufflePlay()" title="Играть вперемешку">▶</button></div></div>
+    html = `<div class="sec"><div class="sec-h"><div style="display:flex;align-items:center"><div class="sec-t">Все треки</div><button class="shuffle-btn" onclick="window.shufflePlay()" title="Играть вперемешку">▶</button></div><span style="color:var(--muted)">${list.length}</span></div>
     <div class="tr-list">${list.length?list.map(t=>rTr(t,false)).join(''):'<div class="empty"><div class="e-ic">🎧</div>Треки не найдены</div>'}</div></div>`;
   } else if (state.view==='artists') {
     const arts = [...new Set(tracks.map(t=>t.artist))].sort();
